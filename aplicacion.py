@@ -21,11 +21,6 @@ def generar_imagen(prompt):
     return image
 
 #Creacion de la interfaz visual
-import gradio as gr
-
-def generar_imagen(prompt):
-    image = pipe(prompt).images[0]
-    return image
 
 with gr.Blocks() as demo:
     gr.Markdown("#Generador de Fondos Inteligente")
