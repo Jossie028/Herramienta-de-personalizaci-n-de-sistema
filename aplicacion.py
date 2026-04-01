@@ -17,12 +17,30 @@ pipe = StableDiffusionPipeline.from_pretrained(
     torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32
 )
 
-# optimización
+#optimización
 pipe.enable_attention_slicing()
 
 # Usa GPU si está disponible, si no usa CPU
 device = "cuda" if torch.cuda.is_available() else "cpu"
 pipe = pipe.to(device)
+
+
+# Funcion para presentar cuadros de colores
+def generar_html_colores(colores_hex):
+    html = ""
+    for color in colores_hex:
+        html += f"""
+        <div style="
+            width: 60px;
+            height: 60px;
+            background-color: {color};
+            display: inline-block;
+            margin: 5px;
+            border-radius: 8px;
+            border: 1px solid #000;
+        "></div>
+        """
+    return html
 
 #función para extraer colores
 def extraer_colores(image, n_colores=5):
@@ -36,7 +54,7 @@ def extraer_colores(image, n_colores=5):
     colores = kmeans.cluster_centers_.astype(int)
     return colores
 
-#para convertir a hex
+#para convertir a hex 
 def colores_a_hex(colores):
     return ['#%02x%02x%02x' % tuple(color) for color in colores]
 
@@ -47,7 +65,10 @@ def generar_imagen(prompt):
     colores = extraer_colores(image)
     colores_hex = colores_a_hex(colores)
 
-    return image, colores_hex
+    # Cruadros de colores
+    html_colores = generar_html_colores(colores_hex)
+
+    return image, colores_hex, html_colores
 
 # Creación de la interfaz visual
 with gr.Blocks() as demo:
@@ -67,10 +88,12 @@ with gr.Blocks() as demo:
     #mostrar colores
     output_colores = gr.Textbox(label="Paleta de colores (HEX)")
 
+    output_html = gr.HTML(label="Vista de colores")
+
     generar_btn.click(
         fn=generar_imagen,   # función que crea la imagen
         inputs=prompt_input, # entrada del texto
-        outputs=[output_image, output_colores] # salida de la imagen generada
+        outputs=[output_image, output_colores, output_html] # salida de la imagen generada
     )
 
-demo.launch()
+demo.launch(inline=True)
