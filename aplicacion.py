@@ -42,6 +42,7 @@ def generar_html_colores(colores_hex):
         """
     return html
 
+
 #función para extraer colores
 def extraer_colores(image, n_colores=5):
     image = image.resize((100, 100))
@@ -54,9 +55,11 @@ def extraer_colores(image, n_colores=5):
     colores = kmeans.cluster_centers_.astype(int)
     return colores
 
+
 #para convertir a hex 
 def colores_a_hex(colores):
     return ['#%02x%02x%02x' % tuple(color) for color in colores]
+
 
 # Función para generar la imagen a partir del texto
 def generar_imagen(prompt):
@@ -65,10 +68,68 @@ def generar_imagen(prompt):
     colores = extraer_colores(image)
     colores_hex = colores_a_hex(colores)
 
-    # Cruadros de colores
     html_colores = generar_html_colores(colores_hex)
 
-    return image, colores_hex, html_colores
+    principal = colores_hex[0]
+    secundario = colores_hex[1]
+    texto = color_texto(colores)
+
+    css = generar_css(principal, secundario, texto)
+
+    return image, colores_hex, html_colores, css
+
+
+#Obtener el color ptincipal
+def color_principal(colores):
+    return colores[0] 
+
+#color de textos dinamicos
+def color_texto(colores):
+    promedio = np.mean(colores)
+    return "white" if promedio < 128 else "black"
+
+
+#Creamos el estilo dinamico
+def generar_css(color_principal, color_secundario, color_texto):
+    return f"""
+    <style>
+        .gradio-container {{
+            background: linear-gradient(135deg, {color_principal}, {color_secundario}) !important;
+            color: {color_texto} !important;
+        }}
+
+        h1 {{
+            background: {color_secundario};
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+        }}
+
+        .gr-box, .gr-panel {{
+            background-color: rgba(255,255,255,0.1) !important;
+            border: 2px solid {color_secundario} !important;
+            border-radius: 12px;
+        }}
+
+        button {{
+            background-color: {color_secundario} !important;
+            color: {color_texto} !important;
+            border-radius: 10px;
+            border: none;
+        }}
+
+        .gr-image {{
+            border: 4px solid {color_secundario};
+            border-radius: 12px;
+        }}
+
+        textarea, input {{
+            border: 2px solid {color_secundario} !important;
+            border-radius: 8px;
+        }}
+    </style>
+    """
+
 
 # Creación de la interfaz visual
 with gr.Blocks() as demo:
@@ -90,10 +151,12 @@ with gr.Blocks() as demo:
 
     output_html = gr.HTML(label="Vista de colores")
 
+    output_style = gr.HTML()
+
     generar_btn.click(
-        fn=generar_imagen,   # función que crea la imagen
-        inputs=prompt_input, # entrada del texto
-        outputs=[output_image, output_colores, output_html] # salida de la imagen generada
+        fn=generar_imagen,
+        inputs=prompt_input,
+        outputs=[output_image, output_colores, output_html, output_style]
     )
 
 demo.launch(inline=True)
